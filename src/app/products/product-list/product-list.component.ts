@@ -19,6 +19,7 @@ export class ProductListComponent implements OnInit {
   selectedProduct: Product;
   filter: FormControl = new FormControl("");
   favouriteProduct: Product;
+  errorMessage: string;
 
   productsSub: Subscription = new Subscription();
 
@@ -28,8 +29,6 @@ export class ProductListComponent implements OnInit {
   filter$: Observable<string>;
   filtered$: Observable<boolean>;
   newFavourite$: Observable<Product>;
-
-  errorMessage;
 
   // Pagination
   pageSize = 5;
@@ -105,7 +104,13 @@ export class ProductListComponent implements OnInit {
 
     this.products$ = this
                       .productService
-                      .products$;
+                      .products$
+                      .pipe(
+                        catchError(err => {
+                          this.errorMessage = err;
+                          return EMPTY;
+                        })
+                      );
 
     this.filter$ = this
                     .filter

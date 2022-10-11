@@ -6,6 +6,12 @@
     Product {{ favouriteProduct.name }} added to your favourites!
 </h2>
 
+<div *ngIf="errorMessage">
+    <h3 class="errorMessage">
+        {{ errorMessage }}
+    </h3>
+</div>
+
 <div class="right">
     {{ productsNumber$ | async }} products
     <span *ngIf="filtered$ | async">(filtered)</span>
