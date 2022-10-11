@@ -18,12 +18,16 @@ export class ProductListComponent implements OnInit {
   title: string = 'Products';
   selectedProduct: Product;
   filter: FormControl = new FormControl("");
+  favouriteProduct: Product;
+
+  productsSub: Subscription = new Subscription();
 
   products$: Observable<Product[]>;
   productsNumber$: Observable<number>;
   filteredProducts$: Observable<Product[]>;
   filter$: Observable<string>;
   filtered$: Observable<boolean>;
+  newFavourite$: Observable<Product>;
 
   errorMessage;
 
@@ -68,7 +72,34 @@ export class ProductListComponent implements OnInit {
     private router: Router) {
   }
 
+  ngOnDestroy() {
+    this.productsSub.unsubscribe();
+  }
+
   ngOnInit(): void {
+
+    // With async pipe in template
+    this.newFavourite$ =
+          this
+            .favouriteService
+            .favouriteAdded$
+            .pipe(
+              tap(product => console.log('new favourite: ' + product?.name))
+            )
+
+    // Without an async pipe
+        // this.productsSub.add(
+        //   this
+        //     .favouriteService
+        //     .favouriteAdded$
+        //     .pipe(
+        //       tap(product => console.log('new favourite: ' + product.name))
+        //     )
+        //     .subscribe(
+        //       product => this.favouriteProduct = product
+        //     )
+        // )
+
     // Self url navigation will refresh the page ('Refresh List' button)
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
 
