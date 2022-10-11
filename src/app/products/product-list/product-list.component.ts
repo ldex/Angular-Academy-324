@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormControl } from '@angular/forms';
 import { Observable, EMPTY, combineLatest, Subscription } from 'rxjs';
-import { tap, catchError, startWith, count, flatMap, map, debounceTime, filter } from 'rxjs/operators';
+import { tap, catchError, startWith, count, flatMap, map, debounceTime, filter, distinctUntilChanged } from 'rxjs/operators';
 
 import { Product } from '../product.interface';
 import { ProductService } from '../product.service';
@@ -17,7 +17,14 @@ export class ProductListComponent implements OnInit {
 
   title: string = 'Products';
   selectedProduct: Product;
+  filter: FormControl = new FormControl("");
+
   products$: Observable<Product[]>;
+  productsNumber$: Observable<number>;
+  filteredProducts$: Observable<Product[]>;
+  filter$: Observable<string>;
+  filtered$: Observable<boolean>;
+
   errorMessage;
 
   // Pagination
@@ -25,6 +32,12 @@ export class ProductListComponent implements OnInit {
   start = 0;
   end = this.pageSize;
   currentPage = 1;
+
+  private resetPagination() {
+    this.start = 0;
+    this.end = this.pageSize;
+    this.currentPage = 1;
+  }
 
   previousPage() {
     this.start -= this.pageSize;
@@ -62,10 +75,45 @@ export class ProductListComponent implements OnInit {
     this.products$ = this
                       .productService
                       .products$;
+
+    this.filter$ = this
+                    .filter
+                    .valueChanges
+                    .pipe(
+                      debounceTime(500),
+                      map(text => text.trim()), // removing white spaces
+                      filter(text => text == '' || text.length > 2), // 3 characters required to filter! (or no filter)
+                      distinctUntilChanged(),
+                      tap(() => this.resetPagination()),
+                      startWith("")
+                    )
+
+    this.filteredProducts$ = combineLatest([this.products$, this.filter$])
+        .pipe(
+          map(([products, filterString]) =>
+            products.filter(product =>
+              product.name.toLowerCase().includes(filterString.toLowerCase())
+            )
+          )
+        )
+
+    this.filtered$ = this
+                      .filter$
+                      .pipe(
+                        map(text => text.length > 0)
+                      )
+
+    this.productsNumber$ = this
+                              .filteredProducts$
+                              .pipe(
+                                map(products => products.length),
+                                startWith(0)
+                              )
+
   }
 
   refresh() {
     this.productService.initProducts();
     this.router.navigateByUrl('/products'); // Self route navigation
-  }  
+  }
 }
