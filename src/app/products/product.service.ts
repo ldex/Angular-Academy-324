@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, delay, shareReplay, tap } from 'rxjs/operators';
+import { catchError, delay, retry, shareReplay, tap } from 'rxjs/operators';
 import { Product } from './product.interface';
 import { LoadingService } from '../services/loading.service';
+import { delayedRetry } from '../delayedRetry.operator';
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +27,8 @@ export class ProductService {
                       .http
                       .get<Product[]>(url)
                       .pipe(
+                        retry({count:3, delay:1000}),
+                       // delayedRetry(1000, 3),
                         delay(1500), // for demo...
                         tap(console.table),
                         shareReplay(),
